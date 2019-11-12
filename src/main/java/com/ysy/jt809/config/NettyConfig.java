@@ -46,7 +46,7 @@ public class NettyConfig {
         /**
          * 单节点最大连接数
          */
-        private Integer maxConnectNum;
+        private Integer maxConnectNum = 2;
 
         /**
          * 读事件空闲时间 秒
