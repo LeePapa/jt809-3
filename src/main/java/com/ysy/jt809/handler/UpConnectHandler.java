@@ -3,12 +3,19 @@ package com.ysy.jt809.handler;
 import com.alibaba.fastjson.JSONObject;
 import com.ysy.jt809.bean.Message;
 import com.ysy.jt809.bean.UpConnectReq;
+import com.ysy.jt809.codec.encoder.Message2ByteEncoder;
+import com.ysy.jt809.config.ChannelManager;
 import com.ysy.jt809.config.NettyConfig;
 import com.ysy.jt809.constants.JT809DataTypeConstants;
 import com.ysy.jt809.constants.JT809ResCodeConstants;
+import com.ysy.jt809.manage.TcpChannelMsgManage;
 import com.ysy.jt809.util.ByteArrayUtil;
+import com.ysy.jt809.util.PacketUtil;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.unix.Buffer;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -24,6 +31,11 @@ public class UpConnectHandler implements CommonHandler {
 
     @Resource
     private NettyConfig.NettyServerConfig serverConfig;
+    @Resource
+    private Message2ByteEncoder message2ByteEncoder;
+    @Resource
+    private TcpChannelMsgManage tcpChannelMsgManage;
+
 
     @Override
     public void handler(ChannelHandlerContext ctx, Message msg) {
@@ -64,7 +76,8 @@ public class UpConnectHandler implements CommonHandler {
             byte[] body = ByteArrayUtil.append(result, verifyCode);
             msg.getMsgHead().setMsgLength(msg.getMsgHead().getMsgLength() - msg.getMsgBody().length + body.length);
             msg.setMsgBody(body);
-            ctx.writeAndFlush(msg);
+            message2ByteEncoder.encode(ctx,msg);
+            tcpChannelMsgManage.addChannel(ctx.channel().id().asLongText(),ctx.channel());
             return;
         }
         if ("".equals(req.getDownLinkIp())) {
@@ -86,7 +99,7 @@ public class UpConnectHandler implements CommonHandler {
         byte[] body = ByteArrayUtil.append(result, verifyCode);
         msg.getMsgHead().setMsgLength(msg.getMsgHead().getMsgLength() - msg.getMsgBody().length + body.length);
         msg.setMsgBody(body);
-        ctx.writeAndFlush(msg);
+        message2ByteEncoder.encode(ctx,msg);
         ctx.channel().close();
     }
 }

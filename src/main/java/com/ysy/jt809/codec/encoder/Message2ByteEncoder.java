@@ -10,13 +10,18 @@ import org.springframework.stereotype.Service;
 /**
  * 编码
  *
+ * @author Administrator
  */
 @Slf4j
 @Service
 public class Message2ByteEncoder {
-    public void encode(ChannelHandlerContext ctx, Message msg) throws Exception {
+    public void encode(ChannelHandlerContext ctx, Message msg) {
         ByteBuf byteBuf = ctx.alloc().buffer();
         byteBuf.writeBytes(PacketUtil.message2Bytes(msg));
-        ctx.write(byteBuf);
+        ctx.writeAndFlush(byteBuf).addListener(future -> {
+            if (!future.isSuccess()) {
+                log.error("发送失败", future.cause());
+            }
+        });
     }
 }
