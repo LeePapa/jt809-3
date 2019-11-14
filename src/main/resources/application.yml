@@ -1,6 +1,9 @@
 netty:
   server:
     tcp-port: 9009
+    user-id: 123456
+    password: test809
+
 
 spring:
   redis:
@@ -18,3 +21,6 @@ spring:
         max-idle: 8
         # 连接池中的最小空闲连接
         min-idle: 0
+logging:
+  level:
+    com.ysy.jt809: trace

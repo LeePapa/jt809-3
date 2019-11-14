@@ -3,6 +3,7 @@ package com.ysy.jt809.handler;
 import com.alibaba.fastjson.JSONObject;
 import com.ysy.jt809.bean.Message;
 import com.ysy.jt809.bean.UpConnectReq;
+import com.ysy.jt809.config.NettyConfig;
 import com.ysy.jt809.constants.JT809DataTypeConstants;
 import com.ysy.jt809.constants.JT809ResCodeConstants;
 import com.ysy.jt809.util.ByteArrayUtil;
@@ -10,21 +11,29 @@ import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
+
 /**
  * 主链路登陆逻辑处理
  *
+ * @author Administrator
  */
 @Slf4j
 @Component
 public class UpConnectHandler implements CommonHandler {
 
+    @Resource
+    private NettyConfig.NettyServerConfig serverConfig;
+
     @Override
     public void handler(ChannelHandlerContext ctx, Message msg) {
-        this.login(ctx,msg);
+        this.login(ctx, msg);
 
     }
+
     /**
      * 登陆逻辑处理
+     *
      * @param msg
      */
     private void login(ChannelHandlerContext ctx, Message msg) {
@@ -41,24 +50,21 @@ public class UpConnectHandler implements CommonHandler {
         index += 2;
 
         UpConnectReq req = new UpConnectReq();
-        req.setUserId(userId);
+        req.setUsername(userId);
         req.setPassword(password);
         req.setDownLinkIp(downLinkIp);
         req.setDownLinkPort(downLinkPort);
         log.info("登陆请求信息：" + JSONObject.toJSONString(req));
 
-        int testUser = 123456;
-        String testPass = "test809";
-
         byte[] result = new byte[]{JT809ResCodeConstants.UpConnect.SUCCESS};
         byte[] verifyCode = new byte[4];
         msg.getMsgHead().setMsgId((short) JT809DataTypeConstants.UP_CONNECT_RSP);
-        if (testUser == req.getUserId() && testPass.equals(password)) {
+        if (serverConfig.getUserId() == req.getUsername() && serverConfig.getPassword().equals(password)) {
             log.info("登陆成功");
             byte[] body = ByteArrayUtil.append(result, verifyCode);
             msg.getMsgHead().setMsgLength(msg.getMsgHead().getMsgLength() - msg.getMsgBody().length + body.length);
             msg.setMsgBody(body);
-            ctx.write(msg);
+            ctx.writeAndFlush(msg);
             return;
         }
         if ("".equals(req.getDownLinkIp())) {
@@ -67,10 +73,10 @@ public class UpConnectHandler implements CommonHandler {
         } else if (123456 != msg.getMsgHead().getMsgGnssCenterId()) {
             log.info("接入码不正确");
             result = new byte[]{JT809ResCodeConstants.UpConnect.GUSSCENTERID_ERROR};
-        } else if (testUser != req.getUserId()) {
+        } else if (serverConfig.getUserId() != req.getUsername()) {
             log.info("用户没有注册");
             result = new byte[]{JT809ResCodeConstants.UpConnect.USER_NOT_EXIST};
-        } else if (!testPass.equals(password)) {
+        } else if (!serverConfig.getPassword().equals(password)) {
             log.info("密码错误");
             result = new byte[]{JT809ResCodeConstants.UpConnect.PASSWORD_ERROR};
         } else {
@@ -80,7 +86,7 @@ public class UpConnectHandler implements CommonHandler {
         byte[] body = ByteArrayUtil.append(result, verifyCode);
         msg.getMsgHead().setMsgLength(msg.getMsgHead().getMsgLength() - msg.getMsgBody().length + body.length);
         msg.setMsgBody(body);
-        ctx.write(msg);
+        ctx.writeAndFlush(msg);
         ctx.channel().close();
     }
 }

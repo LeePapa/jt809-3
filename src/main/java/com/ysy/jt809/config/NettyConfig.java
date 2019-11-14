@@ -61,6 +61,9 @@ public class NettyConfig {
          * 读写都空闲事件 秒
          */
         private Integer allIdleTimeSeconds = 60;
+
+        private Integer userId;
+        private String password;
     }
 
     @Data
