@@ -3,24 +3,42 @@ package com.ysy.jt809.handler;
 import com.alibaba.fastjson.JSONObject;
 import com.ysy.jt809.bean.Message;
 import com.ysy.jt809.bean.UpExgMsg;
+import com.ysy.jt809.codec.encoder.Message2ByteEncoder;
 import com.ysy.jt809.constants.JT809DataTypeConstants;
+import com.ysy.jt809.manage.TcpChannelMsgManage;
 import com.ysy.jt809.util.ByteArrayUtil;
 import com.ysy.jt809.util.PacketUtil;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
 
 
 /**
  * 车辆动态信息交换逻辑处理
  *
+ * @author Administrator
  */
 @Slf4j
 @Component
 public class UpExgMsgHandler implements CommonHandler{
+    @Resource
+    private TcpChannelMsgManage tcpChannelMsgManage;
+    @Resource
+    private Message2ByteEncoder message2ByteEncoder;
 
     @Override
     public void handler(ChannelHandlerContext ctx, Message msg) {
+        Channel channel = tcpChannelMsgManage.getChannel(ctx.channel().id().asLongText());
+        if (channel == null){
+            log.info("非法连接信息");
+            msg.getMsgHead().setMsgId((short) JT809DataTypeConstants.UP_DICONNECE_REQ);
+            message2ByteEncoder.encode(ctx,msg);
+            ctx.channel().close();
+            return;
+        }
         int index = 0;
         String vehicleNo = ByteArrayUtil.bytes2gbkString(ByteArrayUtil.subBytes(msg.getMsgBody(),index,21));
         vehicleNo = vehicleNo.replaceAll("\\u0000","");
