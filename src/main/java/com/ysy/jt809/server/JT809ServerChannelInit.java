@@ -2,7 +2,6 @@ package com.ysy.jt809.server;
 
 import com.ysy.jt809.config.NettyConfig;
 import com.ysy.jt809.handler.inbound.MessageForwardInboundHandler;
-import com.ysy.jt809.handler.inbound.Jt809ServerHandler;
 import com.ysy.jt809.handler.inbound.ServerByte2MessageInboundHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.SocketChannel;
@@ -32,8 +31,7 @@ public class JT809ServerChannelInit extends ChannelInitializer<SocketChannel> {
 		socketChannel.pipeline()
 				.addLast(new IdleStateHandler(serverConfig.getReaderIdleTimeSeconds(),serverConfig.getWriterIdleTimeSeconds(),serverConfig.getAllIdleTimeSeconds(), TimeUnit.SECONDS))
 				.addLast(serverByte2MessageInboundHandler)
-				.addLast(messageForwardInboundHandler)
-				.addLast(new Jt809ServerHandler());
+				.addLast(messageForwardInboundHandler);
 
 	}
 }
