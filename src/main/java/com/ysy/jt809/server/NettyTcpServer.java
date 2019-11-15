@@ -12,12 +12,9 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.concurrent.EventExecutorGroup;
-import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -46,7 +43,7 @@ public class NettyTcpServer {
 	private final EventExecutorGroup businessGroup;
 
 	@Resource
-	private JT809ChannelInitializer jt809ChannelInitializer;
+	private JT809ServerChannelInit jt809ServerChannelInit;
 
 	@Resource
 	private BusinessConfig businessConfig;
@@ -69,14 +66,20 @@ public class NettyTcpServer {
 		ServerBootstrap serverBootstrap = new ServerBootstrap();
 		serverBootstrap.group(bossGroup, workerGroup)
 				.channel(NioServerSocketChannel.class)
-				.childHandler(jt809ChannelInitializer)
-				.option(ChannelOption.SO_BACKLOG, 1024) //服务端可连接队列数,对应TCP/IP协议listen函数中backlog参数
-				.option(ChannelOption.SO_BACKLOG, 1024)		//设置tcp缓冲区
-				.option(ChannelOption.SO_SNDBUF, 32*1024)	//设置发送缓冲大小
-				.option(ChannelOption.SO_RCVBUF, 32*1024)	//这是接收缓冲大小
-				.option(ChannelOption.SO_KEEPALIVE, true) //保持连接
+				.childHandler(jt809ServerChannelInit)
+				//服务端可连接队列数,对应TCP/IP协议listen函数中backlog参数
+				.option(ChannelOption.SO_BACKLOG, 1024)
+				//设置tcp缓冲区
+				.option(ChannelOption.SO_BACKLOG, 1024)
+				//设置发送缓冲大小
+				.option(ChannelOption.SO_SNDBUF, 32*1024)
+				//这是接收缓冲大小
+				.option(ChannelOption.SO_RCVBUF, 32*1024)
+				//保持连接
+				.option(ChannelOption.SO_KEEPALIVE, true)
 				.handler(new LoggingHandler(LogLevel.INFO))	;
-		ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.SIMPLE);//内存泄漏检测 开发推荐PARANOID 线上SIMPLE
+		//内存泄漏检测 开发推荐PARANOID 线上SIMPLE
+		ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.SIMPLE);
 		ChannelFuture future = serverBootstrap.bind(serverConfig.getTcpPort()).sync();
 		if (future.isSuccess()) {
 			log.info("TCP服务启动完毕,port={}", serverConfig.getTcpPort());

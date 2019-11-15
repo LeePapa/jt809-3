@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Description
  */
 @Component
-public class JT809ChannelInitializer extends ChannelInitializer<SocketChannel> {
+public class JT809ServerChannelInit extends ChannelInitializer<SocketChannel> {
 
 	@Resource
 	private NettyConfig.NettyServerConfig serverConfig;
